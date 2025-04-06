@@ -1,7 +1,11 @@
 package org.example.controller;
 
+import org.example.dto.CreateOrderRequest;
+import org.example.dto.CreateOrderResponse;
 import org.example.event.OrderCreatedEvent;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.example.messaging.OrderEventProducer;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -10,17 +14,31 @@ import java.util.UUID;
 @RequestMapping("/orders")
 public class OrderController {
 
-    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
+    private final OrderEventProducer eventProducer;
 
-    public OrderController(KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
+    public OrderController(OrderEventProducer eventProducer) {
+        this.eventProducer = eventProducer;
     }
 
     @PostMapping
-    public String createOrder(@RequestParam String productId, @RequestParam int quantity) {
+    public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         String orderId = UUID.randomUUID().toString();
-        OrderCreatedEvent event = new OrderCreatedEvent(orderId, productId, quantity);
-        kafkaTemplate.send("order-events", event);
-        return "🟢 Order sent with ID: " + orderId;
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                orderId,
+                request.getProductId(),
+                request.getQuantity(),
+                request.getCustomerId()
+        );
+
+        eventProducer.sendOrderCreatedEvent(event);
+
+        CreateOrderResponse response = new CreateOrderResponse(
+                orderId,
+                "CREATED",
+                "Order created successfully and sent to processing"
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
