@@ -9,13 +9,19 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Component
 public class InventoryEventListener {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public InventoryEventListener(KafkaTemplate<String, Object> kafkaTemplate) {
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final OrderInfoStore orderInfoStore;
+
+    public InventoryEventListener(KafkaTemplate<String, Object> kafkaTemplate, OrderInfoStore orderInfoStore) {
         this.kafkaTemplate = kafkaTemplate;
+        this.orderInfoStore = orderInfoStore;
     }
 
 
@@ -26,6 +32,8 @@ public class InventoryEventListener {
         System.out.println("📥 Payment-service отримав подію: " + event);
 
         if (event instanceof InventoryReservedEvent reserved) {
+            orderInfoStore.setQuantity(reserved.getOrderId(), reserved.getQuantity());
+
             PriceRequestEvent request = new PriceRequestEvent(
                     reserved.getOrderId(),
                     reserved.getProductId()

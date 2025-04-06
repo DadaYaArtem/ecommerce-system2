@@ -11,17 +11,19 @@ import org.springframework.stereotype.Component;
 public class PriceResponseListener {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final OrderInfoStore orderInfoStore;
 
-    public PriceResponseListener(KafkaTemplate<String, Object> kafkaTemplate) {
+
+    public PriceResponseListener(KafkaTemplate<String, Object> kafkaTemplate, OrderInfoStore orderInfoStore) {
         this.kafkaTemplate = kafkaTemplate;
+        this.orderInfoStore = orderInfoStore;
     }
 
     @KafkaListener(topics = "price-responses", groupId = "payment-group")
     public void handlePriceResponse(PriceResponseEvent event) {
         System.out.println("💵 Отримано ціну: " + event);
 
-        // 🔢 Симулюємо кількість (можна зберігати десь)
-        int quantity = 1; // тимчасово фіксовано або підключимо до сховища
+        int quantity = orderInfoStore.getQuantity(event.getOrderId());
 
         double total = event.getPrice() * quantity;
 
