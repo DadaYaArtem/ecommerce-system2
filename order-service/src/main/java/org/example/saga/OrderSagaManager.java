@@ -45,11 +45,7 @@ public class OrderSagaManager {
         }
     }
 
-    @KafkaListener(topics = "payment-events", groupId = "order-group")
-    public void handlePaymentEvents(ConsumerRecord<String, Object> record) {
-        Object event = record.value();
-        System.out.println("📥 Order-service отримав подію: " + event);
-
+    public void handlePaymentEvent(Object event) {
         if (event instanceof PaymentConfirmedEvent confirmed) {
             System.out.println("✅ Оплата успішна для замовлення: " + confirmed.getOrderId());
             statusStore.setStatus(confirmed.getOrderId(), "PAID");
@@ -62,4 +58,5 @@ public class OrderSagaManager {
             System.out.println("⚠️ Невідомий тип події: " + event.getClass().getName());
         }
     }
+
 }
