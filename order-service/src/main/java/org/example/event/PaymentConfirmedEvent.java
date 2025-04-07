@@ -3,29 +3,29 @@ package org.example.event;
 public class PaymentConfirmedEvent {
 
     private String orderId;
-    private double amount;
+    private double totalAmount;
 
     public PaymentConfirmedEvent() {
     }
 
-    public PaymentConfirmedEvent(String orderId, double amount) {
+    public PaymentConfirmedEvent(String orderId, double totalAmount) {
         this.orderId = orderId;
-        this.amount = amount;
+        this.totalAmount = totalAmount;
     }
 
     public String getOrderId() {
         return orderId;
     }
 
-    public double getAmount() {
-        return amount;
+    public double getTotalAmount() {
+        return totalAmount;
     }
 
     @Override
     public String toString() {
         return "✅ PaymentConfirmedEvent{" +
                 "orderId='" + orderId + '\'' +
-                ", amount=" + amount +
+                ", totalAmount=" + totalAmount +
                 '}';
     }
 }
