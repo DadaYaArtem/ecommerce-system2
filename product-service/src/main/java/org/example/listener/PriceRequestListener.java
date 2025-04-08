@@ -21,7 +21,7 @@ public class PriceRequestListener {
 
     @KafkaListener(topics = "price-requests", groupId = "product-group")
     public void handlePriceRequest(PriceRequestEvent event) {
-        System.out.println("🔍 Product-service отримав запит на ціну: " + event);
+        System.out.println("🔍 Product-service отримав PriceRequestEvent: " + event);
 
         double price = productService.getPrice(event.getProductId());
 
@@ -32,6 +32,6 @@ public class PriceRequestListener {
         );
 
         kafkaTemplate.send("price-responses", response);
-        System.out.println("📤 Відповідь з ціною: " + response);
+        System.out.println("📤 Відправлено PriceResponseEvent: " + response);
     }
 }

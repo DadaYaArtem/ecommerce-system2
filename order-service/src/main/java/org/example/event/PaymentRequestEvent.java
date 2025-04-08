@@ -6,15 +6,16 @@ public class PaymentRequestEvent {
     private String productId;
     private int quantity;
     private String customerId;
+    private double price; // ← НОВОЕ ПОЛЕ
 
-    public PaymentRequestEvent() {
-    }
+    public PaymentRequestEvent() {}
 
-    public PaymentRequestEvent(String orderId, String productId, int quantity, String customerId) {
+    public PaymentRequestEvent(String orderId, String productId, int quantity, String customerId, double price) {
         this.orderId = orderId;
         this.productId = productId;
         this.quantity = quantity;
         this.customerId = customerId;
+        this.price = price;
     }
 
     public String getOrderId() {
@@ -33,6 +34,10 @@ public class PaymentRequestEvent {
         return customerId;
     }
 
+    public double getPrice() {
+        return price;
+    }
+
     @Override
     public String toString() {
         return "💳 PaymentRequestEvent{" +
@@ -40,6 +45,7 @@ public class PaymentRequestEvent {
                 ", productId='" + productId + '\'' +
                 ", quantity=" + quantity +
                 ", customerId='" + customerId + '\'' +
+                ", price=" + price +
                 '}';
     }
 }
