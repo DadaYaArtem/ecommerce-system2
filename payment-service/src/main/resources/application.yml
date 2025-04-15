@@ -18,3 +18,7 @@ logging:
   level:
     root: INFO
     org.example: DEBUG
+
+app:
+  kafka:
+    bootstrap-servers: localhost:9092

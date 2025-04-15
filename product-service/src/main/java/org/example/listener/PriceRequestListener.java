@@ -6,6 +6,9 @@ import org.example.service.ProductService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.PRICE_REQUESTS;
+import static org.example.kafka.constants.KafkaTopics.PRICE_RESPONSES;
+import static org.example.kafka.constants.KafkaGroups.PRODUCT_SERVICE;
 
 @Component
 public class PriceRequestListener {
@@ -19,7 +22,7 @@ public class PriceRequestListener {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @KafkaListener(topics = "price-requests", groupId = "product-group")
+    @KafkaListener(topics = PRICE_REQUESTS, groupId = PRODUCT_SERVICE)
     public void handlePriceRequest(PriceRequestEvent event) {
         System.out.println("🔍 Product-service отримав PriceRequestEvent: " + event);
 
@@ -31,7 +34,7 @@ public class PriceRequestListener {
                 price
         );
 
-        kafkaTemplate.send("price-responses", response);
+        kafkaTemplate.send(PRICE_RESPONSES, response);
         System.out.println("📤 Відправлено PriceResponseEvent: " + response);
     }
 }

@@ -7,6 +7,9 @@ import org.example.model.OrderInfo;
 import org.example.store.OrderInfoStore;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.PRICE_RESPONSES;
+import static org.example.kafka.constants.KafkaGroups.ORDER_SERVICE;
+
 
 @Component
 public class PriceResponseListener {
@@ -20,7 +23,7 @@ public class PriceResponseListener {
         this.infoStore = infoStore;
     }
 
-    @KafkaListener(topics = "price-responses", groupId = "order-group")
+    @KafkaListener(topics = PRICE_RESPONSES, groupId = ORDER_SERVICE)
     public void listen(PriceResponseEvent event) {
         System.out.println("📥 Отримано PriceResponseEvent: " + event);
 

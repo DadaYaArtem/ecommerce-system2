@@ -3,6 +3,8 @@ package org.example.messaging;
 import org.example.event.PriceRequestEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.PRICE_REQUESTS;
+
 
 @Component
 public class PriceRequestProducer {
@@ -15,6 +17,6 @@ public class PriceRequestProducer {
 
     public void sendPriceRequest(PriceRequestEvent event) {
         System.out.println("📤 Надіслано PriceRequestEvent: " + event);
-        kafkaTemplate.send("price-requests", event);
+        kafkaTemplate.send(PRICE_REQUESTS, event);
     }
 }

@@ -1,11 +1,12 @@
 package org.example.listener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.event.PaymentConfirmedEvent;
-import org.example.event.PaymentFailedEvent;
 import org.example.saga.OrderSagaManager;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.PAYMENT_EVENTS;
+import static org.example.kafka.constants.KafkaGroups.ORDER_SERVICE;
+
 
 @Component
 public class PaymentEventListener {
@@ -16,7 +17,7 @@ public class PaymentEventListener {
         this.sagaManager = sagaManager;
     }
 
-    @KafkaListener(topics = "payment-events", groupId = "order-group")
+    @KafkaListener(topics = PAYMENT_EVENTS, groupId = ORDER_SERVICE)
     public void listenPaymentEvents(ConsumerRecord<String, Object> record) {
         Object event = record.value();
         System.out.println("📥 Order-service отримав подію: " + event);

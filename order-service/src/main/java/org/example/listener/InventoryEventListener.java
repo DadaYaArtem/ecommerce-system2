@@ -1,12 +1,12 @@
 package org.example.listener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.event.InventoryNotAvailableEvent;
-import org.example.event.InventoryReservedEvent;
 import org.example.saga.OrderSagaManager;
-import org.example.store.OrderStatusStore;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.INVENTORY_EVENTS;
+import static org.example.kafka.constants.KafkaGroups.ORDER_SERVICE;
+
 
 @Component
 public class InventoryEventListener {
@@ -17,7 +17,7 @@ public class InventoryEventListener {
         this.sagaManager = sagaManager;
     }
 
-    @KafkaListener(topics = "inventory-events", groupId = "order-group")
+    @KafkaListener(topics = INVENTORY_EVENTS, groupId = ORDER_SERVICE)
     public void listenInventory(ConsumerRecord<String, Object> record) {
         sagaManager.handleInventoryEvent(record.value());
     }

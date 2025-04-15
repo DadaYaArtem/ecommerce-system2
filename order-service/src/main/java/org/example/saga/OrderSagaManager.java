@@ -13,16 +13,13 @@ import org.springframework.stereotype.Component;
 public class OrderSagaManager {
 
     private final OrderStatusStore statusStore;
-    private final OrderInfoStore infoStore;
-    private final PaymentRequestEventProducer paymentProducer;
     private final PriceRequestProducer priceRequestProducer;
 
-    public OrderSagaManager(OrderStatusStore statusStore, OrderInfoStore infoStore, PaymentRequestEventProducer paymentProducer, PriceRequestProducer priceRequestProducer) {
+    public OrderSagaManager(OrderStatusStore statusStore, PriceRequestProducer priceRequestProducer) {
         this.statusStore = statusStore;
-        this.infoStore = infoStore;
-        this.paymentProducer = paymentProducer;
         this.priceRequestProducer = priceRequestProducer;
     }
+
 
     public void handleInventoryEvent(Object event) {
         if (event instanceof InventoryReservedEvent reserved) {

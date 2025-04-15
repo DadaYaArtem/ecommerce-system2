@@ -13,6 +13,7 @@
     <module>inventory-service</module>
       <module>payment-service</module>
     <module>product-service</module>
+      <module>kafka-core</module>
   </modules>
 
   <properties>

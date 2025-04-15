@@ -4,17 +4,21 @@ import org.example.event.InventoryNotAvailableEvent;
 import org.example.event.InventoryReservedEvent;
 import org.example.event.OrderCreatedEvent;
 import org.example.kafka.InventoryEventProducer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.ORDER_EVENTS;
+import static org.example.kafka.constants.KafkaGroups.INVENTORY_SERVICE;
 
 @Component
 public class OrderListener {
 
-    @Autowired
-    private InventoryEventProducer producer;
+    private final InventoryEventProducer producer;
 
-    @KafkaListener(topics = "order-events", groupId = "inventory-group")
+    public OrderListener(InventoryEventProducer producer) {
+        this.producer = producer;
+    }
+
+    @KafkaListener(topics = ORDER_EVENTS, groupId = INVENTORY_SERVICE)
     public void listen(OrderCreatedEvent event) {
         System.out.println("📦 Inventory received: " + event);
 

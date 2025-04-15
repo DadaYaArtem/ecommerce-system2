@@ -4,6 +4,7 @@ import org.example.event.PaymentConfirmedEvent;
 import org.example.event.PaymentFailedEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.PAYMENT_EVENTS;
 
 @Component
 public class PaymentEventProducer {
@@ -16,11 +17,11 @@ public class PaymentEventProducer {
 
     public void sendPaymentConfirmedEvent(PaymentConfirmedEvent event) {
         System.out.println("✅ Відправлено PaymentConfirmedEvent: " + event);
-        kafkaTemplate.send("payment-events", event);
+        kafkaTemplate.send(PAYMENT_EVENTS, event);
     }
 
     public void sendPaymentFailedEvent(PaymentFailedEvent event) {
         System.out.println("❌ Відправлено PaymentFailedEvent: " + event);
-        kafkaTemplate.send("payment-events", event);
+        kafkaTemplate.send(PAYMENT_EVENTS, event);
     }
 }

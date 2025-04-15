@@ -1,8 +1,8 @@
-package org.example.config;
+package org.example.kafka.config;
 
-import org.example.event.OrderCreatedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.example.kafka.properties.KafkaPropertiesWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.*;
@@ -14,13 +14,20 @@ import java.util.Map;
 @Configuration
 public class KafkaProducerConfig {
 
+    private final KafkaPropertiesWrapper kafkaProperties;
+
+    public KafkaProducerConfig(KafkaPropertiesWrapper kafkaProperties) {
+        this.kafkaProperties = kafkaProperties;
+    }
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        // додаткові налаштування за потреби
+
         return new DefaultKafkaProducerFactory<>(config);
     }
 

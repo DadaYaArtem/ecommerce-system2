@@ -8,6 +8,9 @@ import org.example.messaging.PaymentEventProducer;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import static org.example.kafka.constants.KafkaTopics.PAYMENT_REQUESTS;
+import static org.example.kafka.constants.KafkaGroups.PAYMENT_SERVICE;
+
 @Component
 public class PaymentRequestListener {
 
@@ -17,7 +20,7 @@ public class PaymentRequestListener {
         this.producer = producer;
     }
 
-    @KafkaListener(topics = "payment-requests", groupId = "payment-group")
+    @KafkaListener(topics = PAYMENT_REQUESTS, groupId = PAYMENT_SERVICE)
     public void listen(ConsumerRecord<String, Object> record) {
         Object raw = record.value();
 

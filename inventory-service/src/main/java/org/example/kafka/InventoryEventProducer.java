@@ -4,6 +4,8 @@ import org.example.event.InventoryNotAvailableEvent;
 import org.example.event.InventoryReservedEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+import static org.example.kafka.constants.KafkaTopics.INVENTORY_EVENTS;
+
 
 @Component
 public class InventoryEventProducer {
@@ -15,12 +17,12 @@ public class InventoryEventProducer {
     }
 
     public void sendReservedEvent(InventoryReservedEvent event) {
-        kafkaTemplate.send("inventory-events", event);
+        kafkaTemplate.send(INVENTORY_EVENTS, event);
         System.out.println("📤 Sent: " + event);
     }
 
     public void sendNotAvailableEvent(InventoryNotAvailableEvent event) {
-        kafkaTemplate.send("inventory-events", event);
+        kafkaTemplate.send(INVENTORY_EVENTS, event);
         System.out.println("📤 Sent: " + event);
     }
 }
