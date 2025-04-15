@@ -1,7 +1,7 @@
 package org.example.listener;
 
-import org.example.event.PriceRequestEvent;
-import org.example.event.PriceResponseEvent;
+import org.example.events.PriceRequestEvent;
+import org.example.events.PriceResponseEvent;
 import org.example.service.ProductService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;

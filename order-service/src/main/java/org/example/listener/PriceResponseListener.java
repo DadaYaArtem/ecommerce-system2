@@ -1,7 +1,7 @@
 package org.example.listener;
 
-import org.example.event.PaymentRequestEvent;
-import org.example.event.PriceResponseEvent;
+import org.example.events.PaymentRequestEvent;
+import org.example.events.PriceResponseEvent;
 import org.example.messaging.PaymentRequestEventProducer;
 import org.example.model.OrderInfo;
 import org.example.store.OrderInfoStore;

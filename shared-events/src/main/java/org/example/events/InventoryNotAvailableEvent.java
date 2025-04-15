@@ -1,12 +1,12 @@
-package org.example.event;
+package org.example.events;
 
-public class PriceRequestEvent {
+public class InventoryNotAvailableEvent {
     private String orderId;
     private String productId;
 
-    public PriceRequestEvent() {}
+    public InventoryNotAvailableEvent() {}
 
-    public PriceRequestEvent(String orderId, String productId) {
+    public InventoryNotAvailableEvent(String orderId, String productId) {
         this.orderId = orderId;
         this.productId = productId;
     }
@@ -21,7 +21,7 @@ public class PriceRequestEvent {
 
     @Override
     public String toString() {
-        return "📤 PriceRequestEvent{" +
+        return "❌ InventoryNotAvailableEvent{" +
                 "orderId='" + orderId + '\'' +
                 ", productId='" + productId + '\'' +
                 '}';

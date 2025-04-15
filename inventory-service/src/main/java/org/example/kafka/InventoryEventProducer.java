@@ -1,7 +1,7 @@
 package org.example.kafka;
 
-import org.example.event.InventoryNotAvailableEvent;
-import org.example.event.InventoryReservedEvent;
+import org.example.events.InventoryNotAvailableEvent;
+import org.example.events.InventoryReservedEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import static org.example.kafka.constants.KafkaTopics.INVENTORY_EVENTS;

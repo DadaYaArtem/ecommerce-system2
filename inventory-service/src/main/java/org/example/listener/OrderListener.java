@@ -1,8 +1,8 @@
 package org.example.listener;
 
-import org.example.event.InventoryNotAvailableEvent;
-import org.example.event.InventoryReservedEvent;
-import org.example.event.OrderCreatedEvent;
+import org.example.events.InventoryNotAvailableEvent;
+import org.example.events.InventoryReservedEvent;
+import org.example.events.OrderCreatedEvent;
 import org.example.kafka.InventoryEventProducer;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;

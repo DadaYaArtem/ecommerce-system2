@@ -1,4 +1,4 @@
-package org.example.event;
+package org.example.events;
 
 public class PaymentRequestEvent {
 

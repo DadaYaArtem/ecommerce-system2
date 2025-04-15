@@ -1,9 +1,9 @@
 package org.example.listener;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.event.PaymentRequestEvent;
-import org.example.event.PaymentConfirmedEvent;
-import org.example.event.PaymentFailedEvent;
+import org.example.events.PaymentRequestEvent;
+import org.example.events.PaymentConfirmedEvent;
+import org.example.events.PaymentFailedEvent;
 import org.example.messaging.PaymentEventProducer;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;

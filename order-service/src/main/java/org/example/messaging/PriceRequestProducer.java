@@ -1,6 +1,6 @@
 package org.example.messaging;
 
-import org.example.event.PriceRequestEvent;
+import org.example.events.PriceRequestEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import static org.example.kafka.constants.KafkaTopics.PRICE_REQUESTS;

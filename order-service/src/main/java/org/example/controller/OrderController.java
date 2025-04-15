@@ -2,7 +2,7 @@ package org.example.controller;
 
 import org.example.dto.CreateOrderRequest;
 import org.example.dto.CreateOrderResponse;
-import org.example.event.OrderCreatedEvent;
+import org.example.events.OrderCreatedEvent;
 import org.example.messaging.OrderEventProducer;
 import org.example.model.OrderInfo;
 import org.example.store.OrderInfoStore;

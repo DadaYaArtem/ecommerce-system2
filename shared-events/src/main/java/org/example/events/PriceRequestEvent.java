@@ -1,16 +1,14 @@
-package org.example.event;
+package org.example.events;
 
-public class InventoryReservedEvent {
+public class PriceRequestEvent {
     private String orderId;
     private String productId;
-    private int quantity;
 
-    public InventoryReservedEvent() {}
+    public PriceRequestEvent() {}
 
-    public InventoryReservedEvent(String orderId, String productId, int quantity) {
+    public PriceRequestEvent(String orderId, String productId) {
         this.orderId = orderId;
         this.productId = productId;
-        this.quantity = quantity;
     }
 
     public String getOrderId() {
@@ -21,16 +19,11 @@ public class InventoryReservedEvent {
         return productId;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
-
     @Override
     public String toString() {
-        return "InventoryReservedEvent{" +
+        return "📤 PriceRequestEvent{" +
                 "orderId='" + orderId + '\'' +
                 ", productId='" + productId + '\'' +
-                ", quantity=" + quantity +
                 '}';
     }
 }

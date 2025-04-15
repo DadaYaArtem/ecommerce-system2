@@ -15,6 +15,8 @@
     <file url="file://$PROJECT_DIR$/payment-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/product-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/product-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/shared-events/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/shared-events/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

@@ -1,21 +1,18 @@
-package org.example.event;
+package org.example.events;
 
-public class PaymentRequestEvent {
-
+public class OrderCreatedEvent {
     private String orderId;
     private String productId;
     private int quantity;
     private String customerId;
-    private double price; // ← НОВОЕ ПОЛЕ
 
-    public PaymentRequestEvent() {}
+    public OrderCreatedEvent() {}
 
-    public PaymentRequestEvent(String orderId, String productId, int quantity, String customerId, double price) {
+    public OrderCreatedEvent(String orderId, String productId, int quantity, String customerId) {
         this.orderId = orderId;
         this.productId = productId;
         this.quantity = quantity;
         this.customerId = customerId;
-        this.price = price;
     }
 
     public String getOrderId() {
@@ -34,18 +31,13 @@ public class PaymentRequestEvent {
         return customerId;
     }
 
-    public double getPrice() {
-        return price;
-    }
-
     @Override
     public String toString() {
-        return "💳 PaymentRequestEvent{" +
+        return "📦 OrderCreatedEvent{" +
                 "orderId='" + orderId + '\'' +
                 ", productId='" + productId + '\'' +
                 ", quantity=" + quantity +
                 ", customerId='" + customerId + '\'' +
-                ", price=" + price +
                 '}';
     }
 }

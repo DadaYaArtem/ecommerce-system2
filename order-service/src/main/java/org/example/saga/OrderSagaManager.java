@@ -1,12 +1,8 @@
 package org.example.saga;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.example.event.*;
+import org.example.events.*;
 import org.example.messaging.PriceRequestProducer;
-import org.example.store.OrderInfoStore;
-import org.example.messaging.PaymentRequestEventProducer;
 import org.example.store.OrderStatusStore;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,14 +1,16 @@
-package org.example.event;
+package org.example.events;
 
-public class InventoryNotAvailableEvent {
+public class InventoryReservedEvent {
     private String orderId;
     private String productId;
+    private int quantity;
 
-    public InventoryNotAvailableEvent() {}
+    public InventoryReservedEvent() {}
 
-    public InventoryNotAvailableEvent(String orderId, String productId) {
+    public InventoryReservedEvent(String orderId, String productId, int quantity) {
         this.orderId = orderId;
         this.productId = productId;
+        this.quantity = quantity;
     }
 
     public String getOrderId() {
@@ -19,11 +21,16 @@ public class InventoryNotAvailableEvent {
         return productId;
     }
 
+    public int getQuantity() {
+        return quantity;
+    }
+
     @Override
     public String toString() {
-        return "❌ InventoryNotAvailableEvent{" +
+        return "✅ InventoryReservedEvent{" +
                 "orderId='" + orderId + '\'' +
                 ", productId='" + productId + '\'' +
+                ", quantity=" + quantity +
                 '}';
     }
 }

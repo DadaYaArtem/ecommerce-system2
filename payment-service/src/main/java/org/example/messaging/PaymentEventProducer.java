@@ -1,7 +1,7 @@
 package org.example.messaging;
 
-import org.example.event.PaymentConfirmedEvent;
-import org.example.event.PaymentFailedEvent;
+import org.example.events.PaymentConfirmedEvent;
+import org.example.events.PaymentFailedEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import static org.example.kafka.constants.KafkaTopics.PAYMENT_EVENTS;
