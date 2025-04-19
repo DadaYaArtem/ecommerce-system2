@@ -13,6 +13,8 @@ public class KafkaTopics {
     public static final String PRICE_REQUESTS = "price-requests";
     public static final String PRICE_RESPONSES = "price-responses";
 
+    public static final String INVENTORY_RELEASES      = "inventory-release-events";  // <-- новый
+
     private KafkaTopics() {
         // утилитарный класс — не создавать экземпляры
     }

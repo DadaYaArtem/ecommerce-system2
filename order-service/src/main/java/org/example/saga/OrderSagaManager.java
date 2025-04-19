@@ -46,7 +46,7 @@ public class OrderSagaManager {
             System.out.println("✅ Оплата успішна для замовлення: " + confirmed.getOrderId());
             statusStore.setStatus(confirmed.getOrderId(), "PAID");
 
-        }if (event instanceof PaymentFailedEvent failed) {
+        } else if (event instanceof PaymentFailedEvent failed) {
             statusStore.setStatus(failed.getOrderId(), "FAILED_PAYMENT");
 
             var info = infoStore.get(failed.getOrderId());

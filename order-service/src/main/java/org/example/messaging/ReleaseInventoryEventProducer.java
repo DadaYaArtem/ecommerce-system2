@@ -4,6 +4,8 @@ import org.example.events.ReleaseInventoryEvent;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+import static org.example.kafka.constants.KafkaTopics.INVENTORY_RELEASES;
+
 @Component
 public class ReleaseInventoryEventProducer {
 
@@ -14,7 +16,7 @@ public class ReleaseInventoryEventProducer {
     }
 
     public void send(ReleaseInventoryEvent event) {
-        kafkaTemplate.send("inventory-events", event);
+        kafkaTemplate.send(INVENTORY_RELEASES, event);
         System.out.println("📤 Надіслано ReleaseInventoryEvent: " + event);
     }
 }
