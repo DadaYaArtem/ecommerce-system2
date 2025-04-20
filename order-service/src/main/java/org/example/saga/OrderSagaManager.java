@@ -1,65 +1,84 @@
 package org.example.saga;
 
+import org.example.model.Order;
 import org.example.events.*;
 import org.example.messaging.PriceRequestProducer;
 import org.example.messaging.ReleaseInventoryEventProducer;
-import org.example.store.OrderInfoStore;
-import org.example.store.OrderStatusStore;
+import org.example.service.OrderDbService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class OrderSagaManager {
 
-    private final OrderStatusStore statusStore;
+    private final OrderDbService orderDbService;
     private final PriceRequestProducer priceRequestProducer;
-    private final OrderInfoStore infoStore;
     private final ReleaseInventoryEventProducer releaseInventoryProducer;
 
-    public OrderSagaManager(OrderStatusStore statusStore, PriceRequestProducer priceRequestProducer, OrderInfoStore orderInfoStore, ReleaseInventoryEventProducer releaseInventoryEventProducer) {
-        this.statusStore = statusStore;
+    public OrderSagaManager(OrderDbService orderDbService,
+                            PriceRequestProducer priceRequestProducer,
+                            ReleaseInventoryEventProducer releaseInventoryProducer) {
+        this.orderDbService = orderDbService;
         this.priceRequestProducer = priceRequestProducer;
-        this.infoStore = orderInfoStore;
-        this.releaseInventoryProducer = releaseInventoryEventProducer;
+        this.releaseInventoryProducer = releaseInventoryProducer;
     }
-
 
     public void handleInventoryEvent(Object event) {
         if (event instanceof InventoryReservedEvent reserved) {
             System.out.println("✅ Saga: Inventory reserved for " + reserved.getOrderId());
-            statusStore.setStatus(reserved.getOrderId(), "AWAITING_PRICE");
 
-            // отправляем запрос на цену в product-service
-            priceRequestProducer.sendPriceRequest(new PriceRequestEvent(
-                    reserved.getOrderId(),
-                    reserved.getProductId()
-            ));
+            orderDbService.updateItemStatus(reserved.getOrderId(), reserved.getProductId(), "RESERVED");
+
+            tryStartPricingIfReady(reserved.getOrderId());
 
         } else if (event instanceof InventoryNotAvailableEvent notAvailable) {
             System.out.println("❌ Saga: Inventory not available for " + notAvailable.getOrderId());
-            statusStore.setStatus(notAvailable.getOrderId(), "FAILED_INVENTORY");
+
+            orderDbService.updateItemStatus(notAvailable.getOrderId(), notAvailable.getProductId(), "FAILED_RESERVE");
+
+            // ✅ сразу отменяем весь заказ
+            orderDbService.updateStatus(notAvailable.getOrderId(), "FAILED_INVENTORY");
+
+            System.out.println("❌ Статус FAILED_INVENTORY: деякі товари недоступні");
         }
     }
-
 
     public void handlePaymentEvent(Object event) {
         if (event instanceof PaymentConfirmedEvent confirmed) {
             System.out.println("✅ Оплата успішна для замовлення: " + confirmed.getOrderId());
-            statusStore.setStatus(confirmed.getOrderId(), "PAID");
+
+            orderDbService.updateStatus(confirmed.getOrderId(), "PAID");
 
         } else if (event instanceof PaymentFailedEvent failed) {
-            statusStore.setStatus(failed.getOrderId(), "FAILED_PAYMENT");
+            System.out.println("❌ Оплата неуспішна: " + failed.getOrderId());
 
-            var info = infoStore.get(failed.getOrderId());
-            if (info != null) {
-                releaseInventoryProducer.send(new ReleaseInventoryEvent(
-                        failed.getOrderId(),
-                        info.getProductId(),
-                        info.getQuantity()
-                ));
-            }
-        } else {
-            System.out.println("⚠️ Невідомий тип події: " + event.getClass().getName());
+            orderDbService.updateStatus(failed.getOrderId(), "FAILED_PAYMENT");
+
+            // Компенсация — отпускаем все зарезервированные товары
+            orderDbService.findById(failed.getOrderId()).ifPresent(order -> {
+                order.getItems().stream()
+                        .filter(item -> "RESERVED".equals(item.getStatus()))
+                        .forEach(item -> releaseInventoryProducer.send(new ReleaseInventoryEvent(
+                                order.getId(),
+                                item.getProductId(),
+                                item.getQuantity()
+                        )));
+            });
         }
     }
 
+    public void tryStartPricingIfReady(String orderId) {
+        if (orderDbService.allItemsReserved(orderId)) {
+            System.out.println("✅ Всі товари зарезервовані. Надсилаємо запити цін.");
+
+            orderDbService.findById(orderId).ifPresent(order -> {
+                order.getItems().forEach(item -> {
+                    priceRequestProducer.sendPriceRequest(new PriceRequestEvent(
+                            order.getId(),
+                            item.getProductId()
+                    ));
+                    System.out.println("📤 Надіслано PriceRequestEvent: " + item.getProductId());
+                });
+            });
+        }
+    }
 }

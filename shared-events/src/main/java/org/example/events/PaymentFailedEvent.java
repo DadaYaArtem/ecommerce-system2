@@ -3,29 +3,30 @@ package org.example.events;
 public class PaymentFailedEvent {
 
     private String orderId;
-    private String reason;
+    private double totalAmount;
 
     public PaymentFailedEvent() {
     }
 
-    public PaymentFailedEvent(String orderId, String reason) {
+    public PaymentFailedEvent(String orderId, double totalAmount) {
         this.orderId = orderId;
-        this.reason = reason;
+        this.totalAmount = totalAmount;
     }
 
     public String getOrderId() {
         return orderId;
     }
 
-    public String getReason() {
-        return reason;
+
+    public double getTotalAmount() {
+        return totalAmount;
     }
 
     @Override
     public String toString() {
-        return "❌ PaymentFailedEvent{" +
+        return "PaymentFailedEvent{" +
                 "orderId='" + orderId + '\'' +
-                ", reason='" + reason + '\'' +
+                ", totalAmount=" + totalAmount +
                 '}';
     }
 }

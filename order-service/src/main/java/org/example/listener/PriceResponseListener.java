@@ -1,10 +1,10 @@
 package org.example.listener;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.example.events.PaymentRequestEvent;
 import org.example.events.PriceResponseEvent;
 import org.example.messaging.PaymentRequestEventProducer;
-import org.example.model.OrderInfo;
-import org.example.store.OrderInfoStore;
+import org.example.service.OrderDbService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import static org.example.kafka.constants.KafkaTopics.PRICE_RESPONSES;
@@ -15,31 +15,37 @@ import static org.example.kafka.constants.KafkaGroups.ORDER_SERVICE;
 public class PriceResponseListener {
 
     private final PaymentRequestEventProducer paymentProducer;
-    private final OrderInfoStore infoStore;
+    private final OrderDbService orderDbService;
 
     public PriceResponseListener(PaymentRequestEventProducer paymentProducer,
-                                 OrderInfoStore infoStore) {
+                                 OrderDbService orderDbService) {
         this.paymentProducer = paymentProducer;
-        this.infoStore = infoStore;
+        this.orderDbService = orderDbService;
     }
 
     @KafkaListener(topics = PRICE_RESPONSES, groupId = ORDER_SERVICE)
-    public void listen(PriceResponseEvent event) {
-        System.out.println("📥 Отримано PriceResponseEvent: " + event);
+    public void listen(ConsumerRecord<String, Object> record) {
+        Object raw = record.value();
 
-        OrderInfo info = infoStore.get(event.getOrderId());
+        if (raw instanceof PriceResponseEvent event) {
+            System.out.println("📥 Отримано PriceResponseEvent: " + event);
 
-        if (info == null) {
-            System.out.println("⚠️ OrderInfo не знайдено для orderId: " + event.getOrderId());
-            return;
+            orderDbService.updateItemPrice(event.getOrderId(), event.getProductId(), event.getPrice());
+
+            if (orderDbService.allItemsPriced(event.getOrderId())) {
+                double total = orderDbService.calculateTotalAmount(event.getOrderId());
+
+                orderDbService.findById(event.getOrderId()).ifPresent(order -> {
+                    paymentProducer.sendPaymentRequest(new PaymentRequestEvent(
+                            order.getId(),
+                            total,
+                            order.getCustomerId()
+                    ));
+                    System.out.println("📤 Надсилаємо загальний PaymentRequestEvent: " + total);
+                });
+            }
+        } else {
+            System.out.println("⚠️ Невідомий тип події: " + raw.getClass().getName());
         }
-
-        paymentProducer.sendPaymentRequest(new PaymentRequestEvent(
-                event.getOrderId(),
-                event.getProductId(),
-                info.getQuantity(),
-                info.getCustomerId(),
-                event.getPrice()
-        ));
     }
 }

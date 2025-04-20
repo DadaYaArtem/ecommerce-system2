@@ -2,6 +2,18 @@ server:
   port: 8080
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/orders-db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: create  # можно заменить на validate, если позже добавим миграции
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     bootstrap-servers: localhost:9092
     consumer:

@@ -4,63 +4,70 @@ import org.example.dto.CreateOrderRequest;
 import org.example.dto.CreateOrderResponse;
 import org.example.events.OrderCreatedEvent;
 import org.example.messaging.OrderEventProducer;
-import org.example.model.OrderInfo;
-import org.example.store.OrderInfoStore;
-import org.example.store.OrderStatusStore;
+import org.example.model.Order;
+import org.example.model.OrderItem;
+import org.example.service.OrderDbService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
 
-    private final OrderEventProducer eventProducer;
-    private final OrderStatusStore orderStatusStore;
-    private final OrderInfoStore orderInfoStore;
+    private final OrderDbService orderDbService;
+    private final OrderEventProducer orderProducer;
 
-    public OrderController(OrderEventProducer eventProducer, OrderStatusStore orderStatusStore, OrderInfoStore orderInfoStore) {
-        this.eventProducer = eventProducer;
-        this.orderStatusStore = orderStatusStore;
-        this.orderInfoStore = orderInfoStore;
+    public OrderController(OrderDbService orderDbService,
+                           OrderEventProducer orderProducer) {
+        this.orderDbService = orderDbService;
+        this.orderProducer = orderProducer;
     }
 
     @PostMapping
     public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
-        String orderId = UUID.randomUUID().toString();
-        orderStatusStore.setStatus(orderId, "CREATED");
+        Order order = new Order();
+        order.setCustomerId(request.getCustomerId());
+        order.setStatus("CREATED");
 
-        // зберігаємо повну інформацію
-        orderInfoStore.put(orderId, new OrderInfo(
-                request.getProductId(),
-                request.getQuantity(),
-                request.getCustomerId()
-        ));
+        for (CreateOrderRequest.ItemRequest item : request.getItems()) {
+            OrderItem orderItem = new OrderItem(item.getProductId(), item.getQuantity(), order);
+            order.getItems().add(orderItem);
+        }
 
-        OrderCreatedEvent event = new OrderCreatedEvent(
-                orderId,
-                request.getProductId(),
-                request.getQuantity(),
-                request.getCustomerId()
-        );
+        orderDbService.save(order);
 
-        eventProducer.sendOrderCreatedEvent(event);
+        // пока отправим только первый товар — для совместимости со старой логикой
+//        OrderItem firstItem = order.getItems().get(0);
+
+        for (OrderItem item : order.getItems()) {
+            orderProducer.sendOrderCreatedEvent(new OrderCreatedEvent(
+                    order.getId(),
+                    item.getProductId(),
+                    item.getQuantity(),
+                    order.getCustomerId()
+            ));
+        }
 
         CreateOrderResponse response = new CreateOrderResponse(
-                orderId,
+                order.getId(),
                 "CREATED",
-                "Order created successfully and sent to processing"
+                "Order created successfully"
         );
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<String> getStatus(@PathVariable String id) {
-        String status = orderStatusStore.getStatus(id);
-        return ResponseEntity.ok("Status for order " + id + ": " + status);
+    public ResponseEntity<?> getOrderById(@PathVariable String id) {
+        return orderDbService.findById(id)
+                .map(order -> ResponseEntity.ok(new CreateOrderResponse(
+                        order.getId(),
+                        order.getStatus(),
+                        "Order status fetched successfully"
+                )))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new CreateOrderResponse(id, "NOT_FOUND", "❌ Order not found")));
     }
 
 }

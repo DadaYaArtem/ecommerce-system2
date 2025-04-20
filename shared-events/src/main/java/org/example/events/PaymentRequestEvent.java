@@ -3,49 +3,47 @@ package org.example.events;
 public class PaymentRequestEvent {
 
     private String orderId;
-    private String productId;
-    private int quantity;
+    private double totalAmount;
     private String customerId;
-    private double price; // ← НОВОЕ ПОЛЕ
 
     public PaymentRequestEvent() {}
 
-    public PaymentRequestEvent(String orderId, String productId, int quantity, String customerId, double price) {
+    public PaymentRequestEvent(String orderId, double totalAmount, String customerId) {
         this.orderId = orderId;
-        this.productId = productId;
-        this.quantity = quantity;
+        this.totalAmount = totalAmount;
         this.customerId = customerId;
-        this.price = price;
     }
 
     public String getOrderId() {
         return orderId;
     }
 
-    public String getProductId() {
-        return productId;
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
     }
 
-    public int getQuantity() {
-        return quantity;
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     public String getCustomerId() {
         return customerId;
     }
 
-    public double getPrice() {
-        return price;
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
     @Override
     public String toString() {
-        return "💳 PaymentRequestEvent{" +
+        return "PaymentRequestEvent{" +
                 "orderId='" + orderId + '\'' +
-                ", productId='" + productId + '\'' +
-                ", quantity=" + quantity +
+                ", totalAmount=" + totalAmount +
                 ", customerId='" + customerId + '\'' +
-                ", price=" + price +
                 '}';
     }
 }

@@ -27,17 +27,15 @@ public class PaymentRequestListener {
         if (raw instanceof PaymentRequestEvent event) {
             System.out.println("📥 Отримано PaymentRequestEvent: " + event);
 
-            double total = event.getQuantity() * event.getPrice();
-
-            if (total > 10000.0) {
-                producer.sendPaymentFailedEvent(new PaymentFailedEvent(
-                        event.getOrderId(),
-                        "💸 Сума перевищує ліміт 10000. Total: " + total
-                ));
-            } else {
+            if (event.getTotalAmount() <= 10000) {
                 producer.sendPaymentConfirmedEvent(new PaymentConfirmedEvent(
                         event.getOrderId(),
-                        total
+                        event.getTotalAmount()
+                ));
+            } else {
+                producer.sendPaymentFailedEvent(new PaymentFailedEvent(
+                        event.getOrderId(),
+                        event.getTotalAmount()
                 ));
             }
 
