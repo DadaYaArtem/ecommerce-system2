@@ -1,19 +1,23 @@
 package org.example.service;
 
+import org.example.repository.ProductRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class ProductService {
 
-    private final Map<String, Double> priceMap = Map.of(
-            "p123", 499.0,
-            "p456", 1299.0,
-            "p789", 9999.0
-    );
+    private final ProductRepository repository;
+
+    public ProductService(ProductRepository repository) {
+        this.repository = repository;
+    }
 
     public double getPrice(String productId) {
-        return priceMap.getOrDefault(productId, 0.0);
+        return repository.findById(productId)
+                .map(product -> {
+                    System.out.println("✅ Ціна з бази: " + product.getPrice());
+                    return product.getPrice();
+                })
+                .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
     }
 }

@@ -2,6 +2,18 @@ server:
   port: 8083
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5435/product-db
+    username: postgres
+    password: postgres
+  jpa:
+      hibernate:
+        ddl-auto: create
+      show-sql: false
+      properties:
+        hibernate:
+          format_sql: false
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
