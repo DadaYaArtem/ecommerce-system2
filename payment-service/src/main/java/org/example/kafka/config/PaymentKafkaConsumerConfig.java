@@ -1,22 +1,18 @@
 package org.example.kafka.config;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.events.DeadLetterRecord;
 import org.example.events.PaymentRequestEvent;
-import org.example.events.PaymentRequestFailedEvent;  // Импортируем класс с ошибкой
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 @Configuration
 public class PaymentKafkaConsumerConfig {
@@ -35,13 +31,26 @@ public class PaymentKafkaConsumerConfig {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
                 (record, ex) -> {
-                    // Создаём событие с ошибкой и отправляем в DLQ
-                    PaymentRequestFailedEvent failedEvent = new PaymentRequestFailedEvent(
-                            ((PaymentRequestEvent) record.value()).getOrderId(),
-                            ((PaymentRequestEvent) record.value()).getTotalAmount(),
-                            ex.getMessage()  // Добавляем сообщение об ошибке
+                    // Получаем оригинальное сообщение
+                    PaymentRequestEvent event = (PaymentRequestEvent) record.value();
+
+                    // Генерируем stack trace в текстовый вид
+                    StringWriter sw = new StringWriter();
+                    ex.printStackTrace(new PrintWriter(sw));
+                    String stackTrace = sw.toString();
+
+                    // Создаём DeadLetterRecord
+                    DeadLetterRecord<PaymentRequestEvent> dlqMessage = new DeadLetterRecord<>(
+                            event,
+                            ex.getClass().getName(),
+                            ex.getMessage(),
+                            stackTrace
                     );
-                    kafkaTemplate.send(record.topic() + ".DLT", failedEvent);
+
+                    // Отправляем в DLQ
+                    kafkaTemplate.send(record.topic() + ".DLT", dlqMessage);
+
+                    // Возвращаем null, чтобы Spring больше ничего не пересылал
                     return null;
                 }
         );
