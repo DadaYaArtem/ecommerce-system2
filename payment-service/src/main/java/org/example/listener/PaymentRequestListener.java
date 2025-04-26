@@ -26,12 +26,17 @@ public class PaymentRequestListener {
         this.producer = producer;
     }
 
-    @KafkaListener(topics = PAYMENT_REQUESTS, groupId = PAYMENT_SERVICE)
+    @KafkaListener(topics = PAYMENT_REQUESTS, groupId = PAYMENT_SERVICE, containerFactory = "paymentKafkaListenerContainerFactory")
     public void listen(ConsumerRecord<String, Object> record) {
         Object raw = record.value();
 
         if (raw instanceof PaymentRequestEvent event) {
             System.out.println("📥 Отримано PaymentRequestEvent: " + event);
+
+            if (event.getCustomerId().startsWith("9")) {
+                System.out.println("DDDDDDLLLLLLLLLQQQQQQQQQ");
+                throw new RuntimeException("💥 Тестова помилка у платіжному сервісі");
+            }
 
             PaymentResult result = paymentGateway.processPayment(
                     new PaymentRequest(event.getOrderId(), event.getCustomerId(), event.getTotalAmount())

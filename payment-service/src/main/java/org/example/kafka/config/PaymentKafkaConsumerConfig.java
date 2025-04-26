@@ -4,14 +4,11 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.events.PaymentRequestEvent;
-import org.example.events.PaymentRequestFailedEvent;
-import org.example.kafka.properties.KafkaPropertiesWrapper;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.example.events.PaymentRequestFailedEvent;  // Импортируем класс с ошибкой
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -22,38 +19,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class KafkaConsumerConfig {
+public class PaymentKafkaConsumerConfig {
 
     @Bean
-    @ConditionalOnMissingBean
-    public ConsumerFactory<String, Object> consumerFactory(KafkaPropertiesWrapper props) {
-        Map<String, Object> config = new HashMap<>();
-
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, props.getBootstrapServers());
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-
-        return new DefaultKafkaConsumerFactory<>(config);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ConcurrentKafkaListenerContainerFactory<String, Object>
-    kafkaListenerContainerFactory(
+    public ConcurrentKafkaListenerContainerFactory<String, Object> paymentKafkaListenerContainerFactory(
             ConsumerFactory<String, Object> consumerFactory,
-            KafkaTemplate<String, Object> kafkaTemplate  // <— сюда именно String,Object
-    ) {
+            KafkaTemplate<String, Object> kafkaTemplate) {
+
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
 
-        // повторим 3 раза с паузой 1 с, затем в DLQ
+        // Повторяем 3 раза с паузой 1 с, затем в DLQ
         FixedBackOff backOff = new FixedBackOff(1000L, 3L);
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
-                (record, ex) ->
-                        new TopicPartition(record.topic() + ".DLT", record.partition())
+                (record, ex) -> {
+                    // Создаём событие с ошибкой и отправляем в DLQ
+                    PaymentRequestFailedEvent failedEvent = new PaymentRequestFailedEvent(
+                            ((PaymentRequestEvent) record.value()).getOrderId(),
+                            ((PaymentRequestEvent) record.value()).getTotalAmount(),
+                            ex.getMessage()  // Добавляем сообщение об ошибке
+                    );
+                    kafkaTemplate.send(record.topic() + ".DLT", failedEvent);
+                    return null;
+                }
         );
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
         factory.setCommonErrorHandler(errorHandler);
