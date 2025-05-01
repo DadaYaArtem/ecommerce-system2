@@ -34,7 +34,6 @@ public class PaymentRequestListener {
             System.out.println("📥 Отримано PaymentRequestEvent: " + event);
 
             if (event.getCustomerId().startsWith("9")) {
-                System.out.println("DDDDDDLLLLLLLLLQQQQQQQQQ");
                 throw new RuntimeException("💥 Тестова помилка у платіжному сервісі");
             }
 
