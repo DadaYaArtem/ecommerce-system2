@@ -30,6 +30,32 @@ logging:
   level:
     root: INFO
     org.example: DEBUG
+    io.opentelemetry: INFO
+
+# Настройки OpenTelemetry
+otel:
+  exporter:
+    otlp:
+      endpoint: http://localhost:4317
+
+# Настройки Actuator для предоставления метрик
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    enable:
+      all: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 app:
   kafka:
