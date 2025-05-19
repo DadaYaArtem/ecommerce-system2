@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface InventoryReservationRepository extends JpaRepository<InventoryReservation, Long> {
+    List<InventoryReservation> findByOrderId(String orderId);
 
     List<InventoryReservation> findByOrderIdAndStatus(String orderId, String status);
 }

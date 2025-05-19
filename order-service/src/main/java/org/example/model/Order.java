@@ -83,6 +83,10 @@ public class Order {
         return items;
     }
 
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
+    }
+
     @Override
     public String toString() {
         return "Order{" +
@@ -96,6 +100,4 @@ public class Order {
                 '}';
     }
 
-    // сеттеры, геттеры, toString
-    // (можно сгенерировать или использовать Lombok, если захочешь позже)
 }

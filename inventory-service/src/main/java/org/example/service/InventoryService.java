@@ -22,7 +22,6 @@ public class InventoryService {
     }
 
     public boolean tryReserve(String orderId, String productId, int quantity) {
-        // ✅ Сначала проверим, есть ли смысл резервировать
         if (!canReserve(productId, quantity)) {
             return false;
         }

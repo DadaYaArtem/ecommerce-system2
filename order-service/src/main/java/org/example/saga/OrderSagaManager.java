@@ -1,22 +1,24 @@
 package org.example.saga;
 
-import org.example.model.Order;
 import org.example.events.*;
 import org.example.messaging.PriceRequestProducer;
 import org.example.messaging.ReleaseInventoryEventProducer;
+import org.example.service.MetricsService;
 import org.example.service.OrderDbService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class OrderSagaManager {
 
+    private final MetricsService metricsService;
     private final OrderDbService orderDbService;
     private final PriceRequestProducer priceRequestProducer;
     private final ReleaseInventoryEventProducer releaseInventoryProducer;
 
-    public OrderSagaManager(OrderDbService orderDbService,
+    public OrderSagaManager(MetricsService metricsService, OrderDbService orderDbService,
                             PriceRequestProducer priceRequestProducer,
                             ReleaseInventoryEventProducer releaseInventoryProducer) {
+        this.metricsService = metricsService;
         this.orderDbService = orderDbService;
         this.priceRequestProducer = priceRequestProducer;
         this.releaseInventoryProducer = releaseInventoryProducer;
@@ -35,7 +37,6 @@ public class OrderSagaManager {
 
             orderDbService.updateItemStatus(notAvailable.getOrderId(), notAvailable.getProductId(), "FAILED_RESERVE");
 
-            // ✅ сразу отменяем весь заказ
             orderDbService.updateStatus(notAvailable.getOrderId(), "FAILED_INVENTORY");
 
             System.out.println("❌ Статус FAILED_INVENTORY: деякі товари недоступні");
@@ -47,13 +48,13 @@ public class OrderSagaManager {
             System.out.println("✅ Оплата успішна для замовлення: " + confirmed.getOrderId());
 
             orderDbService.updateStatus(confirmed.getOrderId(), "PAID");
+            metricsService.incrementOrderPaid();
 
         } else if (event instanceof PaymentFailedEvent failed) {
             System.out.println("❌ Оплата неуспішна: " + failed.getOrderId());
 
             orderDbService.updateStatus(failed.getOrderId(), "FAILED_PAYMENT");
 
-            // Компенсация — отпускаем все зарезервированные товары
             orderDbService.findById(failed.getOrderId()).ifPresent(order -> {
                 order.getItems().stream()
                         .filter(item -> "RESERVED".equals(item.getStatus()))
