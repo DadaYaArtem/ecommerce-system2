@@ -23,12 +23,13 @@ public class PaymentTimeoutService {
     private final OrderDbService orderDbService;
     private final PaymentRequestEventProducer paymentProducer;
     private final ReleaseInventoryEventProducer releaseInventoryProducer;
+    private final PaymentRequestCancellationService cancellationService;
     private final MetricsService metricsService;
     private final TraceService traceService;
-    
+
     @Value("${app.payment.timeout-minutes:5}")
     private int paymentTimeoutMinutes;
-    
+
     @Value("${app.payment.max-retries:3}")
     private int maxRetries;
 
@@ -37,12 +38,14 @@ public class PaymentTimeoutService {
             OrderDbService orderDbService,
             PaymentRequestEventProducer paymentProducer,
             ReleaseInventoryEventProducer releaseInventoryProducer,
+            PaymentRequestCancellationService cancellationService,
             MetricsService metricsService,
             TraceService traceService) {
         this.orderRepository = orderRepository;
         this.orderDbService = orderDbService;
         this.paymentProducer = paymentProducer;
         this.releaseInventoryProducer = releaseInventoryProducer;
+        this.cancellationService = cancellationService;
         this.metricsService = metricsService;
         this.traceService = traceService;
     }
@@ -57,20 +60,20 @@ public class PaymentTimeoutService {
             return null;
         });
     }
-    
+
     /**
      * Find orders that are waiting for payment and have exceeded the timeout period
      */
     private List<Order> findTimedOutOrders() {
         LocalDateTime cutoffTime = LocalDateTime.now().minus(paymentTimeoutMinutes, ChronoUnit.MINUTES);
-        
+
         return orderRepository.findByStatusAndRetryCountLessThanAndUpdatedAtBefore(
-                "AWAITING_PAYMENT", 
-                maxRetries, 
+                "AWAITING_PAYMENT",
+                maxRetries,
                 cutoffTime
         );
     }
-    
+
     /**
      * Handle a timed-out order based on retry count
      */
@@ -80,23 +83,26 @@ public class PaymentTimeoutService {
             attributes.put("order.id", order.getId());
             attributes.put("retry.count", String.valueOf(order.getRetryCount()));
             traceService.addSpanAttributes(attributes);
-            
+
+            // Cancel the current pending payment request
+            cancellationService.cancelPaymentRequest(order);
+
             // Increment retry count
             order.setRetryCount(order.getRetryCount() + 1);
-            
+
             if (order.getRetryCount() >= maxRetries) {
                 // Max retries reached, mark order as failed
                 order.setStatus("FAILED_PAYMENT_TIMEOUT");
                 orderRepository.save(order);
-                
+
                 // Add event to trace
-                traceService.addSpanEvent("Payment failed after max retries", 
+                traceService.addSpanEvent("Payment failed after max retries",
                         Map.of("max_retries", String.valueOf(maxRetries)));
-                
+
                 // Increment metrics
                 metricsService.incrementOrderFailed();
                 metricsService.incrementPaymentTimeout();
-                
+
                 // Release reserved inventory
                 releaseReservedInventory(order);
             } else {
@@ -104,11 +110,11 @@ public class PaymentTimeoutService {
                 order.setStatus("PAYMENT_RETRY");
                 order.setUpdatedAt(LocalDateTime.now());
                 orderRepository.save(order);
-                
+
                 // Add event to trace
-                traceService.addSpanEvent("Retrying payment", 
+                traceService.addSpanEvent("Retrying payment",
                         Map.of("retry_count", String.valueOf(order.getRetryCount())));
-                
+
                 // Retry the payment request
                 double total = orderDbService.calculateTotalAmount(order.getId());
                 PaymentRequestEvent event = new PaymentRequestEvent(
@@ -117,16 +123,16 @@ public class PaymentTimeoutService {
                         order.getCustomerId()
                 );
                 paymentProducer.sendPaymentRequest(event);
-                
+
                 // Update status to awaiting payment again
                 order.setStatus("AWAITING_PAYMENT");
                 orderRepository.save(order);
             }
-            
+
             return null;
         });
     }
-    
+
     /**
      * Release all reserved inventory for an order
      */
@@ -140,11 +146,11 @@ public class PaymentTimeoutService {
                             item.getQuantity()
                     );
                     releaseInventoryProducer.send(event);
-                    
+
                     // Update item status
                     item.setStatus("INVENTORY_RELEASED");
                 });
-        
+
         // Save order with updated item statuses
         orderRepository.save(order);
     }

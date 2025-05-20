@@ -15,6 +15,8 @@ public class KafkaTopics {
 
     public static final String INVENTORY_RELEASES      = "inventory-release-events";  // <-- новый
 
+    public static final String PAYMENT_CANCELLATIONS = "payment-cancellations";
+
     private KafkaTopics() {
         // утилитарный класс — не создавать экземпляры
     }

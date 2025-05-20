@@ -5,7 +5,11 @@ import org.example.messaging.PriceRequestProducer;
 import org.example.messaging.ReleaseInventoryEventProducer;
 import org.example.service.MetricsService;
 import org.example.service.OrderDbService;
+import org.example.service.TraceService;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class OrderSagaManager {
@@ -14,14 +18,16 @@ public class OrderSagaManager {
     private final OrderDbService orderDbService;
     private final PriceRequestProducer priceRequestProducer;
     private final ReleaseInventoryEventProducer releaseInventoryProducer;
+    private final TraceService traceService;
 
     public OrderSagaManager(MetricsService metricsService, OrderDbService orderDbService,
                             PriceRequestProducer priceRequestProducer,
-                            ReleaseInventoryEventProducer releaseInventoryProducer) {
+                            ReleaseInventoryEventProducer releaseInventoryProducer, TraceService traceService) {
         this.metricsService = metricsService;
         this.orderDbService = orderDbService;
         this.priceRequestProducer = priceRequestProducer;
         this.releaseInventoryProducer = releaseInventoryProducer;
+        this.traceService = traceService;
     }
 
     public void handleInventoryEvent(Object event) {
@@ -44,27 +50,71 @@ public class OrderSagaManager {
     }
 
     public void handlePaymentEvent(Object event) {
-        if (event instanceof PaymentConfirmedEvent confirmed) {
-            System.out.println("✅ Оплата успішна для замовлення: " + confirmed.getOrderId());
+        traceService.traceOperation("handlePaymentEvent", () -> {
+            Map<String, String> attributes = new HashMap<>();
 
-            orderDbService.updateStatus(confirmed.getOrderId(), "PAID");
-            metricsService.incrementOrderPaid();
+            if (event instanceof PaymentConfirmedEvent confirmed) {
+                attributes.put("event.type", "PaymentConfirmedEvent");
+                attributes.put("order.id", confirmed.getOrderId());
+                traceService.addSpanAttributes(attributes);
 
-        } else if (event instanceof PaymentFailedEvent failed) {
-            System.out.println("❌ Оплата неуспішна: " + failed.getOrderId());
+                // Check if the order is still in a valid state for payment confirmation
+                orderDbService.findById(confirmed.getOrderId()).ifPresent(order -> {
+                    String status = order.getStatus();
 
-            orderDbService.updateStatus(failed.getOrderId(), "FAILED_PAYMENT");
+                    traceService.addSpanEvent("Order status check", Map.of("current_status", status));
 
-            orderDbService.findById(failed.getOrderId()).ifPresent(order -> {
-                order.getItems().stream()
-                        .filter(item -> "RESERVED".equals(item.getStatus()))
-                        .forEach(item -> releaseInventoryProducer.send(new ReleaseInventoryEvent(
-                                order.getId(),
-                                item.getProductId(),
-                                item.getQuantity()
-                        )));
-            });
-        }
+                    // Only process payment confirmation for orders awaiting payment
+                    if ("AWAITING_PAYMENT".equals(status) || "PAYMENT_RETRY".equals(status)) {
+                        System.out.println("✅ Payment successful for order: " + confirmed.getOrderId());
+
+                        orderDbService.updateStatus(confirmed.getOrderId(), "PAID");
+                        metricsService.incrementOrderPaid();
+                    } else {
+                        // Order is not in a valid state for payment confirmation
+                        System.out.println("⚠️ Ignoring payment confirmation for order " +
+                                confirmed.getOrderId() + " with status " + status);
+                        traceService.addSpanEvent("Ignoring stale payment confirmation",
+                                Map.of("order_status", status));
+                    }
+                });
+            } else if (event instanceof PaymentFailedEvent failed) {
+                attributes.put("event.type", "PaymentFailedEvent");
+                attributes.put("order.id", failed.getOrderId());
+                traceService.addSpanAttributes(attributes);
+
+                // Check if the order is still in a valid state for payment failure
+                orderDbService.findById(failed.getOrderId()).ifPresent(order -> {
+                    String status = order.getStatus();
+
+                    traceService.addSpanEvent("Order status check", Map.of("current_status", status));
+
+                    // Only process payment failure for orders awaiting payment
+                    if ("AWAITING_PAYMENT".equals(status) || "PAYMENT_RETRY".equals(status)) {
+                        System.out.println("❌ Payment failed: " + failed.getOrderId());
+
+                        orderDbService.updateStatus(failed.getOrderId(), "FAILED_PAYMENT");
+
+                        // Release inventory
+                        order.getItems().stream()
+                                .filter(item -> "RESERVED".equals(item.getStatus()))
+                                .forEach(item -> releaseInventoryProducer.send(new ReleaseInventoryEvent(
+                                        order.getId(),
+                                        item.getProductId(),
+                                        item.getQuantity()
+                                )));
+                    } else {
+                        // Order is not in a valid state for payment failure
+                        System.out.println("⚠️ Ignoring payment failure for order " +
+                                failed.getOrderId() + " with status " + status);
+                        traceService.addSpanEvent("Ignoring stale payment failure",
+                                Map.of("order_status", status));
+                    }
+                });
+            }
+
+            return null;
+        });
     }
 
     public void tryStartPricingIfReady(String orderId) {
