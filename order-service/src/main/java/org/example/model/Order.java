@@ -18,6 +18,8 @@ public class Order {
     private String status; // CREATED, PAID, FAILED_PAYMENT и т.д.
     private Double price;
 
+    private int retryCount = 0;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -29,6 +31,7 @@ public class Order {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.status = "CREATED";
+        this.retryCount = 0;
     }
 
     public String getId() {
@@ -77,6 +80,14 @@ public class Order {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
 
     public List<OrderItem> getItems() {

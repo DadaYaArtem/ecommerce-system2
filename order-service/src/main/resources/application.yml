@@ -26,6 +26,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+  task:
+    scheduling:
+      enabled: true
+
 logging:
   level:
     root: INFO
@@ -60,3 +64,6 @@ management:
 app:
   kafka:
     bootstrap-servers: localhost:9092
+  payment:
+    timeout-minutes: 1  # How long to wait before considering a payment as stuck
+    max-retries: 1      # How many times to retry payments before giving up

@@ -15,6 +15,8 @@ public class MetricsService {
     private final Counter orderCreatedCounter;
     private final Counter orderPaidCounter;
     private final Counter orderFailedCounter;
+    private final Counter paymentTimeoutCounter;
+    private final Counter paymentRetryCounter;
 
     public MetricsService(MeterRegistry registry) {
         this.registry = registry;
@@ -26,6 +28,12 @@ public class MetricsService {
                 .register(registry);
         this.orderFailedCounter = Counter.builder("order.failed")
                 .description("Total number of failed orders")
+                .register(registry);
+        this.paymentTimeoutCounter = Counter.builder("payment.timeout")
+                .description("Number of payments that timed out after max retries")
+                .register(registry);
+        this.paymentRetryCounter = Counter.builder("payment.retry")
+                .description("Number of payment retry attempts")
                 .register(registry);
     }
 
@@ -39,6 +47,14 @@ public class MetricsService {
 
     public void incrementOrderFailed() {
         orderFailedCounter.increment();
+    }
+
+    public void incrementPaymentTimeout() {
+        paymentTimeoutCounter.increment();
+    }
+
+    public void incrementPaymentRetry() {
+        paymentRetryCounter.increment();
     }
 
     public <T> T recordTimedOperation(String name, Supplier<T> operation) {
