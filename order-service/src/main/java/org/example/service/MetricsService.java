@@ -17,6 +17,9 @@ public class MetricsService {
     private final Counter orderFailedCounter;
     private final Counter paymentTimeoutCounter;
     private final Counter paymentRetryCounter;
+    private final Counter inventoryTimeoutCounter;
+    private final Counter inventoryRetryCounter;
+    private final Counter pricingTimeoutCounter;
 
     public MetricsService(MeterRegistry registry) {
         this.registry = registry;
@@ -34,6 +37,15 @@ public class MetricsService {
                 .register(registry);
         this.paymentRetryCounter = Counter.builder("payment.retry")
                 .description("Number of payment retry attempts")
+                .register(registry);
+        this.inventoryTimeoutCounter = Counter.builder("inventory.timeout")
+                .description("Number of inventory operations that timed out after max retries")
+                .register(registry);
+        this.inventoryRetryCounter = Counter.builder("inventory.retry")
+                .description("Number of inventory retry attempts")
+                .register(registry);
+        this.pricingTimeoutCounter = Counter.builder("pricing.timeout")
+                .description("Number of orders that failed due to pricing service timeout")
                 .register(registry);
     }
 
@@ -55,6 +67,18 @@ public class MetricsService {
 
     public void incrementPaymentRetry() {
         paymentRetryCounter.increment();
+    }
+
+    public void incrementInventoryTimeout() {
+        inventoryTimeoutCounter.increment();
+    }
+
+    public void incrementInventoryRetry() {
+        inventoryRetryCounter.increment();
+    }
+
+    public void incrementPricingTimeout() {
+        pricingTimeoutCounter.increment();
     }
 
     public <T> T recordTimedOperation(String name, Supplier<T> operation) {

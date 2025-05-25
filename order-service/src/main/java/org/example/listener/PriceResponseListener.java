@@ -44,29 +44,46 @@ public class PriceResponseListener {
 
                 System.out.println("📥 Отримано PriceResponseEvent: " + event);
 
-                orderDbService.updateItemPrice(event.getOrderId(), event.getProductId(), event.getPrice());
+                // Check if the order is still in a valid state for pricing
+                return orderDbService.findById(event.getOrderId())
+                        .map(order -> {
+                            String status = order.getStatus();
 
-                if (orderDbService.allItemsPriced(event.getOrderId())) {
-                    double total = orderDbService.calculateTotalAmount(event.getOrderId());
+                            // Only process price responses for orders still in CREATED state
+                            if (!"CREATED".equals(status)) {
+                                System.out.println("⚠️ Ignoring late price response for order " +
+                                        event.getOrderId() + " with status " + status);
+                                traceService.addSpanEvent("Ignoring late price response",
+                                        Map.of("order_status", status));
+                                return null;
+                            }
 
-                    orderDbService.findById(event.getOrderId()).ifPresent(order -> {
-                        // Update order status to reflect we're waiting for payment
-                        orderDbService.updateStatus(order.getId(), "AWAITING_PAYMENT");
+                            // Update item price
+                            orderDbService.updateItemPrice(event.getOrderId(), event.getProductId(), event.getPrice());
 
-                        PaymentRequestEvent paymentEvent = new PaymentRequestEvent(
-                                order.getId(),
-                                total,
-                                order.getCustomerId()
-                        );
+                            // Check if all items are now priced
+                            if (orderDbService.allItemsPriced(event.getOrderId())) {
+                                double total = orderDbService.calculateTotalAmount(event.getOrderId());
 
-                        paymentProducer.sendPaymentRequest(paymentEvent);
+                                // Update order status to reflect we're waiting for payment
+                                orderDbService.updateStatus(order.getId(), "AWAITING_PAYMENT");
 
-                        traceService.addSpanEvent("Payment request sent",
-                                Map.of("total_amount", String.valueOf(total)));
+                                PaymentRequestEvent paymentEvent = new PaymentRequestEvent(
+                                        order.getId(),
+                                        total,
+                                        order.getCustomerId()
+                                );
 
-                        System.out.println("📤 Надсилаємо загальний PaymentRequestEvent: " + total);
-                    });
-                }
+                                paymentProducer.sendPaymentRequest(paymentEvent);
+
+                                traceService.addSpanEvent("Payment request sent",
+                                        Map.of("total_amount", String.valueOf(total)));
+
+                                System.out.println("📤 Надсилаємо загальний PaymentRequestEvent: " + total);
+                            }
+                            return null;
+                        })
+                        .orElse(null);
             } else {
                 traceService.addSpanEvent("Unknown event type received",
                         Map.of("event_class", raw.getClass().getName()));
