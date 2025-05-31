@@ -1,5 +1,8 @@
 package org.example.service;
 
+import org.example.dto.InventoryResponse;
+import org.example.dto.WarehouseInfo;
+import org.example.exception.InventoryNotFoundException;
 import org.example.model.Inventory;
 import org.example.model.InventoryReservation;
 import org.example.repository.InventoryRepository;
@@ -8,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class InventoryService {
@@ -83,5 +87,30 @@ public class InventoryService {
                 .sum();
 
         return totalAvailable >= quantity;
+    }
+
+    public List<InventoryResponse> getInventoryByProduct(String productId) {
+        return inventoryRepository.findByProductId(productId).stream()
+                .map(inv -> new InventoryResponse(inv.getProductId(), inv.getWarehouseId(), inv.getAvailableQuantity()))
+                .collect(Collectors.toList());
+    }
+
+    public List<InventoryResponse> getInventoryByWarehouse(String warehouseId) {
+        return inventoryRepository.findByWarehouseId(warehouseId).stream()
+                .map(inv -> new InventoryResponse(inv.getProductId(), inv.getWarehouseId(), inv.getAvailableQuantity()))
+                .collect(Collectors.toList());
+    }
+
+    public List<WarehouseInfo> getWarehousesWithProduct(String productId) {
+        return inventoryRepository.findByProductId(productId).stream()
+                .map(inv -> new WarehouseInfo(inv.getWarehouseId(), "Склад №" + inv.getWarehouseId()))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public InventoryResponse getInventoryForProductAtWarehouse(String productId, String warehouseId) {
+        return inventoryRepository.findByProductIdAndWarehouseId(productId, warehouseId)
+                .map(inv -> new InventoryResponse(inv.getProductId(), inv.getWarehouseId(), inv.getAvailableQuantity()))
+                .orElseThrow(() -> new InventoryNotFoundException(productId, warehouseId));
     }
 }
