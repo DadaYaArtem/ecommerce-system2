@@ -25,6 +25,10 @@ public class PaymentDbService {
         return repository.findByOrderId(orderId);
     }
 
+    public Payment save(Payment payment) {
+        return repository.save(payment);
+    }
+
     @Transactional
     public void updateStatus(String paymentId, PaymentStatus status,
                              String transactionId, String errorMessage) {
