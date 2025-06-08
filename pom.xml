@@ -15,6 +15,7 @@
         <module>product-service</module>
         <module>kafka-core</module>
         <module>shared-events</module>
+        <module>delivery-service</module>
     </modules>
 
     <properties>
