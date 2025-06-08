@@ -160,6 +160,18 @@ services:
     volumes:
       - delivery_data:/var/lib/postgresql/data
 
+  notification_postgres:
+    image: postgres:15
+    container_name: notification_postgres
+    environment:
+      POSTGRES_DB: notifications-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+
 volumes:
   grafana-storage:
   prometheus-data:
@@ -168,4 +180,5 @@ volumes:
   inventory_data:
   payment_data:
   delivery_data:
+  notification_data:
 
