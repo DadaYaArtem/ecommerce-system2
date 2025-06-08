@@ -9,6 +9,8 @@ import org.example.gateway.PaymentRequest;
 import org.example.gateway.PaymentResult;
 import org.example.gateway.PaymentStatus;
 import org.example.messaging.PaymentEventProducer;
+import org.example.model.Payment;
+import org.example.service.PaymentDbService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +22,14 @@ public class PaymentRequestListener {
 
     private final PaymentGateway paymentGateway;
     private final PaymentEventProducer producer;
+    private final PaymentDbService paymentDbService;
 
-    public PaymentRequestListener(PaymentGateway paymentGateway, PaymentEventProducer producer) {
+    public PaymentRequestListener(PaymentGateway paymentGateway,
+                                  PaymentEventProducer producer,
+                                  PaymentDbService paymentDbService) {
         this.paymentGateway = paymentGateway;
         this.producer = producer;
+        this.paymentDbService = paymentDbService;
     }
 
     @KafkaListener(topics = PAYMENT_REQUESTS, groupId = PAYMENT_SERVICE, containerFactory = "paymentKafkaListenerContainerFactory")
@@ -37,9 +43,18 @@ public class PaymentRequestListener {
                 throw new RuntimeException("💥 Тестова помилка у платіжному сервісі");
             }
 
+            Payment payment = new Payment();
+            payment.setOrderId(event.getOrderId());
+            payment.setAmount(event.getTotalAmount());
+            payment.setStatus(PaymentStatus.PENDING);
+            paymentDbService.create(payment);
+
             PaymentResult result = paymentGateway.processPayment(
                     new PaymentRequest(event.getOrderId(), event.getCustomerId(), event.getTotalAmount())
             );
+
+            paymentDbService.updateStatus(payment.getId(), result.getStatus(),
+                    result.getTransactionId(), result.getErrorMessage());
 
             if (result.getStatus() == PaymentStatus.SUCCESSFUL) {
                 producer.sendPaymentConfirmedEvent(new PaymentConfirmedEvent(
