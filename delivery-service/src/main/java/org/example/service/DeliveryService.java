@@ -24,6 +24,10 @@ public class DeliveryService {
         return repository.save(delivery);
     }
 
+    public Delivery findByOrderId(String orderId) {
+        return repository.findByOrderId(orderId);
+    }
+
     @Transactional
     public void updateStatus(String orderId, DeliveryStatus status) {
         Delivery delivery = repository.findByOrderId(orderId);
