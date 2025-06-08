@@ -148,6 +148,18 @@ services:
     volumes:
       - payment_data:/var/lib/postgresql/data
 
+  delivery_postgres:
+    image: postgres:15
+    container_name: delivery_postgres
+    environment:
+      POSTGRES_DB: deliveries-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - delivery_data:/var/lib/postgresql/data
+
 volumes:
   grafana-storage:
   prometheus-data:
@@ -155,4 +167,5 @@ volumes:
   product_data:
   inventory_data:
   payment_data:
+  delivery_data:
 
